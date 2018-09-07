@@ -1,0 +1,17 @@
+---
+
+- include: install-composer.yml
+
+- include: install-drupal.yml
+
+- include: config-drupal.yml
+
+- include: setup-site.yml
+
+- include: install-modules.yml
+
+- name: restart web server
+  service:
+    name: httpd
+    state: restarted
+

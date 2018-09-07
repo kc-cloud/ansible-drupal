@@ -1,0 +1,18 @@
+---
+
+- name: Install Drupal modules with Composer
+  become: false    
+  composer:
+     command: require 
+     arguments: drupal/{{ item }}
+     working_dir: "{{ drupal_base_path }}"
+  with_items: "{{ drupal_install_modules }}"
+
+- name: Enable Drupal modules with Drush
+  become: false
+  command: "{{ drupal_base_path }}/vendor/drush/drush/drush en {{ item }}"
+  with_items: "{{ drupal_enable_modules }}"
+
+- name: Run cron
+  become: false
+  command: "{{ drupal_base_path }}/vendor/drush/drush/drush cron"

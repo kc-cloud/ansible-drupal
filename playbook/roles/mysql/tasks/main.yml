@@ -1,0 +1,79 @@
+---
+
+- include: clean-up.yml
+
+- name: Add MYSQL repository
+  yum_repository:
+    name: '{{item.name}}'
+    description: '{{item.desc}}'
+    baseurl: '{{item.url}}'
+    enabled: yes
+    gpgcheck: yes
+    #gpgkey: http://repo.mysql.com/RPM-GPG-KEY-mysql
+    gpgkey: 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-mysql'
+  with_items:
+    - { name: 'mysql-connectors-community', desc: 'MySQL Connectors Community', url: 'http://repo.mysql.com/yum/mysql-{{mysql_version}}-community/el/7/$basearch/'}
+    - { name: 'mysql-tools-community', desc: 'MySQL Tools Community', url: 'http://repo.mysql.com/yum/mysql-{{mysql_version}}-community/el/7/$basearch/'}
+    - { name: 'mysql-{{mysql_version}}-community', desc: 'MySQL {{mysql_version}} Community', url: 'http://repo.mysql.com/yum/mysql-{{mysql_version}}-community/el/7/$basearch/'}
+
+- name: Install MySQL
+  yum:
+    name: '{{ item }}'
+    state: present
+  with_items:
+   - mysql-server
+   - MySQL-python
+
+- name: set environment variables
+  shell: systemctl set-environment MYSQLD_OPTS="--skip-grant-tables"
+
+- name: copy my conf
+  template:
+    src: 'my.cnf.j2'
+    dest: '.my.cnf'
+
+- name: start mysql
+  service:
+    name: '{{ db_service }}'
+    state: started
+    enabled: yes
+
+- name: Reset root PW
+  command: mysql -u root --execute="UPDATE mysql.user SET authentication_string = PASSWORD('{{ db_root_password }}'), Host = '{{db_host}}' WHERE User = 'root';"
+
+- name: Flush MySQL privileges
+  command: mysql -u root --execute="FLUSH PRIVILEGES"
+
+- name: stop mysql
+  service:
+    name: '{{ db_service }}'
+    state: stopped
+  ignore_errors: yes
+
+- name: Unset environment variables
+  shell: systemctl unset-environment MYSQLD_OPTS
+
+- name: start mysql
+  service:
+    name: '{{ db_service }}'
+    state: started
+
+- name: Create Drupal Database
+  mysql_db:
+    name: '{{ db_name }}'
+    login_user: root
+    login_password: '{{ db_root_password }}'
+    state: present
+
+- name: Create Drupal DB User
+  mysql_user:
+    name: '{{ db_user }}'
+    password: '{{ db_user_password }}'
+    #priv: '{{ db_name }}.*:{{ db_user_privileges }}'
+    #priv: "{{ admin_privileges|join('/') }}"
+    #priv: '{{ db_user }}.*:ALL/*.*:SUPER,RELOAD,SHOW DATABASES'
+    priv: '{{ db_name }}.*:ALL'
+    host: '{{ db_host }}'
+    state: present
+    login_user: root
+    login_password: '{{ db_root_password }}'

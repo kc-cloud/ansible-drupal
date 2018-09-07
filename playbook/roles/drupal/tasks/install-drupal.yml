@@ -1,0 +1,38 @@
+---
+
+- name: Check if already installed
+  stat: 
+    path: "{{ drupal_base_path }}/composer.json"
+  register: composer_run
+
+- name: Make sure drupal_base_path doesn't exist
+  when: not composer_run.stat.exists
+  file:
+    path: "{{ drupal_base_path }}"
+    state: absent
+
+- name: Create Drupal base directory
+  file:
+    path: "{{ drupal_base_path }}"
+    state: directory
+    owner: "{{ drupal_os_user }}"
+    group: "{{ drupal_os_group }}"
+
+- name: Install Drupal with Composer
+  when: not composer_run.stat.exists
+  composer:
+    command: create-project
+    arguments: drupal/drupal drupal --stability stable --no-interaction
+    working_dir: "{{ drupal_base_path }}/.."
+    prefer_dist: yes
+
+- name: Make composer.json writeable
+  file:
+    path: "{{ drupal_base_path }}/composer.json"
+    mode: 0770
+
+- name: Install Drush with Composer
+  composer:
+     command: require 
+     arguments: drush/drush
+     working_dir: "{{ drupal_base_path }}"

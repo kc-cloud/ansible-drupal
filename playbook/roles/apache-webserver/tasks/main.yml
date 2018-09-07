@@ -1,0 +1,51 @@
+---
+
+- name: EPEL repo
+  yum_repository:
+    name: epel
+    description: 'Extra Packages for Enterprise Linux 7 - $basearch'
+    metalink: 'https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch'
+    failovermethod: priority
+    enabled: 1
+    gpgcheck: 1
+    gpgkey: 'https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-7'
+    #gpgkey: 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7'
+
+- name: webtatic repo
+  yum_repository:
+    name: webtatic
+    description: 'Webtatic Repository EL7 - $basearch'
+    mirrorlist: 'https://mirror.webtatic.com/yum/el7/$basearch/mirrorlist'
+    failovermethod: priority
+    enabled: 1
+    gpgcheck: 1
+    #gpgkey: 'file:///etc/pki/rpm-gpg/RPM-GPG-KEY-webtatic-el7'
+    gpgkey: 'https://mirror.webtatic.com/yum/RPM-GPG-KEY-webtatic-el7'
+
+- name: Install Apache Http Server
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - httpd
+    - mod_ssl
+    - php
+    - php-mbstring
+    - php-gd
+    - php-xml
+    - php-pear
+    - php-fpm
+    - php-mysql
+    - phpmyadmin
+
+- name: Route Traffic to Drupal
+  lineinfile:
+    dest: /etc/httpd/conf/httpd.conf
+    regexp: '^DocumentRoot\s'
+    line: 'DocumentRoot "{{drupal_base_path}}"'
+
+- name: Ensure Apache is always running
+  service:
+    name: httpd
+    state: started
+    enabled: yes

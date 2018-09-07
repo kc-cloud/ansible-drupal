@@ -1,0 +1,20 @@
+---
+
+- name: Stop MySQL Service
+  service:
+    name: httpd
+    state: stopped
+  ignore_errors: yes
+
+- name: Stop MySQL Service
+  service:
+    name: '{{ db_service }}'
+    state: stopped
+  ignore_errors: yes
+
+- name: Uninstall MySQL
+  yum:
+    name: '{{ item }}'
+    state: absent
+  with_items:
+   - mysql-server

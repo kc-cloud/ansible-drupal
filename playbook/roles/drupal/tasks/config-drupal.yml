@@ -1,0 +1,41 @@
+---
+
+- name: Setup drupal home directory
+  file:
+    path: "{{ drupal_base_path }}"
+    state: directory
+    owner: "{{ drupal_os_user }}"
+    group: "{{ drupal_os_group }}"
+    recurse: yes
+
+- name: Create config/sync directory
+  file:
+    path: "{{ drupal_base_path }}/config/sync/"
+    state: directory
+    owner: "{{ drupal_os_user }}"
+    group: "{{ drupal_os_group }}"
+
+- name: Write Drupal settings.php
+  template: 
+    src: settings.php.j2 
+    dest: "{{ drupal_base_path }}/sites/default/settings.php"
+    owner: "{{ drupal_os_user }}"
+    group: "{{ drupal_os_group }}"
+    mode: 0644
+
+- name: Lock down sites/default
+  file:
+    path: "{{ drupal_base_path }}/sites/default"
+    state: directory
+    owner: "{{ drupal_os_user }}"
+    group: "{{ drupal_os_group }}"
+    mode: 0755
+    recurse: yes
+
+- name: Create writeable /files dir
+  file:
+    path: "{{ drupal_base_path }}/sites/default/files"
+    state: directory
+    owner: "{{ drupal_os_user }}"
+    group: "{{ drupal_os_group }}"
+    mode: 0770
